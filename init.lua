@@ -161,13 +161,12 @@ require('lazy').setup({
     'voldikss/vim-floaterm',
     setup = function()
       require('floaterm').setup()
-
-      -- open lazygit with :FloatermNew lazygit
-      function _G.lazygit()
-        require('floaterm').terminal().send_command 'lazygit'
-      end
-
-      vim.keymap.set('n', '<leader>ng', '<cmd>lua lazygit()<CR>', { desc = 'Open [L]azygit' })
+    end,
+    config = function()
+      vim.g.floaterm_width = 0.9
+      vim.g.floaterm_height = 0.9
+      vim.g.floaterm_borderchars = { '─', '│', '─', '│', '╭', '╮', '╯', '╰' }
+      vim.keymap.set('n', '<leader>ng', '<cmd>FloatermNew lazygit<CR>', { desc = 'Open [L]azygit' })
     end,
   },
   {
@@ -785,6 +784,20 @@ require('lazy').setup({
       vim.cmd.hi 'Comment gui=none'
     end,
   },
+
+  -- {
+  --  'gmr458/vscode_modern_theme.nvim',
+  -- lazy = false,
+  -- priority = 1000,
+  -- config = function()
+  --   require('vscode_modern').setup {
+  --    cursorline = true,
+  --   transparent_background = false,
+  --  nvim_tree_darker = true,
+  -- }
+  -- vim.cmd.colorscheme 'vscode_modern'
+  -- end,
+  -- },
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
