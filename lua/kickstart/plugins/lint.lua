@@ -1,5 +1,7 @@
 return {
-
+  {
+    'githib/copilot.vim',
+  },
   { -- Linting
     'mfussenegger/nvim-lint',
     event = { 'BufReadPre', 'BufNewFile' },
