@@ -145,7 +145,7 @@ vim.opt.rtp:prepend(lazypath)
 --    :Lazy update
 --
 -- NOTE: Here is where you install your plugins.
-require('lazy').setup({
+require('lazy').setup {
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -898,7 +898,84 @@ require('lazy').setup({
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
   -- { import = 'custom.plugins' },
-}, {
+  --
+  --- DAP Configuration for javascript and typescript
+  {
+    'mfussenegger/nvim-dap',
+    recommended = true,
+    desc = 'Debugging support. Requires language specific adapters to be configured. (see lang extras)',
+
+    dependencies = {
+      'rcarriga/nvim-dap-ui',
+      -- virtual text for the debugger
+      {
+        'theHamsta/nvim-dap-virtual-text',
+        opts = {},
+      },
+      'mxsdev/nvim-dap-vscode-js',
+    },
+
+  -- stylua: ignore
+  keys = {
+    { "<leader>d", "", desc = "+debug", mode = {"n", "v"} },
+    { "<leader>b", function() require("dap").toggle_breakpoint() end, desc = "Toggle Breakpoint" },
+    { "<F2>", function() require("dap").continue() end, desc = "Continue" },
+    { "<leader>dC", function() require("dap").run_to_cursor() end, desc = "Run to Cursor" },
+    { "<leader>dg", function() require("dap").goto_() end, desc = "Go to Line (No Execute)" },
+    { "<leader>di", function() require("dap").step_into() end, desc = "Step Into" },
+    { "<leader>dj", function() require("dap").down() end, desc = "Down" },
+    { "<leader>dk", function() require("dap").up() end, desc = "Up" },
+    { "<leader>dl", function() require("dap").run_last() end, desc = "Run Last" },
+    { "<leader>do", function() require("dap").step_out() end, desc = "Step Out" },
+    { "<leader>dO", function() require("dap").step_over() end, desc = "Step Over" },
+    { "<leader>dp", function() require("dap").pause() end, desc = "Pause" },
+    { "<leader>dr", function() require("dap").repl.toggle() end, desc = "Toggle REPL" },
+    { "<leader>ds", function() require("dap").session() end, desc = "Session" },
+    { "<leader>dt", function() require("dap").terminate() end, desc = "Terminate" },
+    { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
+  },
+
+    config = function()
+      -- dap-ui
+      vim.api.nvim_set_hl(0, 'DapStoppedLine', { default = true, link = 'Visual' })
+
+      require('dap').adapters.node2 = {
+        type = 'executable',
+        command = 'node',
+        args = { '/opt/homebrew/bin/node', '/opt/homebrew/lib/node_modules/vscode-js-debug/out/src/vsDebugServer.js' },
+      }
+
+      require('dap-vscode-js').setup {
+        node_path = '/opt/homebrew/bin/node',
+        debugger_path = '(runtimedir)/site/pack/packer/opt/vscode-js-debug', -- Path to vscode-js-debug installation.
+        debugger_cmd = { 'js-debug-adapter' }, -- Command to use to launch the debug server. Takes precedence over `node_path` and `debugger_path`.
+        adapters = { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' }, -- which adapters to register in nvim-dap
+        log_file_path = '(stdpath cache)/dap_vscode_js.log', -- Path for file logging
+        log_file_level = false, -- Logging level for output to file. Set to false to disable file logging.
+        log_console_level = vim.log.levels.ERROR, -- Logging level for output to console. Set to false to disable console output.
+      }
+
+      for _, language in ipairs { 'typescript', 'javascript' } do
+        require('dap').configurations[language] = {
+
+          {
+            type = 'pwa-node',
+            request = 'launch',
+            name = 'Launch file',
+            program = '${file}',
+            cwd = '${workspaceFolder}',
+          },
+          {
+            type = 'pwa-node',
+            request = 'attach',
+            name = 'Attach',
+            processId = require('dap.utils').pick_process,
+            cwd = '${workspaceFolder}',
+          },
+        }
+      end
+    end,
+  },
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
@@ -918,7 +995,7 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
-})
+}
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
