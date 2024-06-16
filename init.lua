@@ -913,13 +913,14 @@ require('lazy').setup {
   -- { import = 'custom.plugins' },
   --
   --- DAP Configuration for javascript and typescript
-
+  'nvim-neotest/nvim-nio',
+  'rcarriga/nvim-dap-ui',
   {
     'mfussenegger/nvim-dap',
     recommended = true,
     desc = 'Debugging support. Requires language specific adapters to be configured. (see lang extras)',
     dependencies = {
-      'rcarriga/nvim-dap-ui',
+
       {
         'theHamsta/nvim-dap-virtual-text',
         opts = {},
@@ -1039,17 +1040,13 @@ require('lazy').setup {
       local dap = require 'dap'
       local dap_utils = require 'dap.utils'
       local dap_vscode_js = require 'dap-vscode-js'
+      local dap_ui = require 'dapui'
+
+      dap_ui.setup()
+
       dap.set_log_level 'DEBUG'
 
-      -- Configure the adapter
-      -- dap.adapters.node2 = {
-      --   type = 'executable',
-      --  command = 'node', -- Your Node.js executable
-      --  args = { os.getenv 'HOME' .. '/.DAP/vscode-js-debug' },
-      --}
-
       -- Define configurations
-
       dap_vscode_js.setup {
         node_path = 'node',
         debugger_path = os.getenv 'HOME' .. '/.DAP/vscode-js-debug',
@@ -1058,15 +1055,11 @@ require('lazy').setup {
 
       local exts = {
         'javascript',
-        -- 'typescript',
-        --'javascriptreact',
-        --'typescriptreact',
-        -- using pwa-chrome
-        --'vue',
-        --'svelte',
+        'typescript',
       }
 
       for _, ext in ipairs(exts) do
+        -- log the configuration
         dap.configurations[ext] = {
           {
             type = 'pwa-node',
@@ -1126,6 +1119,24 @@ require('lazy').setup {
             skipFiles = { '<node_internals>/**' },
           },
         }
+      end
+
+      -- DAP UI
+      dap.listeners.before.attach.dapui_config = function()
+        print 'before attach dapui'
+        dap_ui.open()
+      end
+      dap.listeners.before.launch.dapui_config = function()
+        print 'before launch dapui'
+        dap_ui.open()
+      end
+      dap.listeners.before.event_terminated.dapui_config = function()
+        print 'before event_terminated dapui'
+        dap_ui.close()
+      end
+      dap.listeners.before.event_exited.dapui_config = function()
+        print 'before event_exited dapui'
+        dap_ui.close()
       end
     end,
   },
