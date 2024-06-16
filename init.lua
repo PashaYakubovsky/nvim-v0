@@ -1,4 +1,4 @@
--- disable netrw at the very start of your init.lua
+--disable netrw at the very start of your init.lua
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
@@ -913,77 +913,217 @@ require('lazy').setup {
   -- { import = 'custom.plugins' },
   --
   --- DAP Configuration for javascript and typescript
+
   {
     'mfussenegger/nvim-dap',
     recommended = true,
     desc = 'Debugging support. Requires language specific adapters to be configured. (see lang extras)',
-
     dependencies = {
       'rcarriga/nvim-dap-ui',
-      -- virtual text for the debugger
       {
         'theHamsta/nvim-dap-virtual-text',
         opts = {},
       },
       'mxsdev/nvim-dap-vscode-js',
     },
-
-  -- stylua: ignore
-  keys = {
-    { "<leader>d", "", desc = "+debug", mode = {"n", "v"} },
-    { "<leader>b", function() require("dap").toggle_breakpoint() end, desc = "Toggle Breakpoint" },
-    { "<F2>", function() require("dap").continue() end, desc = "Continue" },
-    { "<leader>dC", function() require("dap").run_to_cursor() end, desc = "Run to Cursor" },
-    { "<leader>dg", function() require("dap").goto_() end, desc = "Go to Line (No Execute)" },
-    { "<leader>di", function() require("dap").step_into() end, desc = "Step Into" },
-    { "<leader>dj", function() require("dap").down() end, desc = "Down" },
-    { "<leader>dk", function() require("dap").up() end, desc = "Up" },
-    { "<leader>dl", function() require("dap").run_last() end, desc = "Run Last" },
-    { "<leader>do", function() require("dap").step_out() end, desc = "Step Out" },
-    { "<leader>dO", function() require("dap").step_over() end, desc = "Step Over" },
-    { "<leader>dp", function() require("dap").pause() end, desc = "Pause" },
-    { "<leader>dr", function() require("dap").repl.toggle() end, desc = "Toggle REPL" },
-    { "<leader>ds", function() require("dap").session() end, desc = "Session" },
-    { "<leader>dt", function() require("dap").terminate() end, desc = "Terminate" },
-    { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
-  },
-
+    ensure_installed = 'all',
+    keys = {
+      { '<leader>d', '', desc = '+debug', mode = { 'n', 'v' } },
+      {
+        '<leader>b',
+        function()
+          require('dap').toggle_breakpoint()
+        end,
+        desc = 'Toggle Breakpoint',
+      },
+      {
+        '<F2>',
+        function()
+          require('dap').continue()
+        end,
+        desc = 'Continue',
+      },
+      {
+        '<leader>dr',
+        function()
+          -- open vscode debug console
+          require('dap').repl.open()
+        end,
+      },
+      {
+        '<leader>dC',
+        function()
+          require('dap').run_to_cursor()
+        end,
+        desc = 'Run to Cursor',
+      },
+      {
+        '<leader>dg',
+        function()
+          require('dap').goto_()
+        end,
+        desc = 'Go to Line (No Execute)',
+      },
+      {
+        '<leader>di',
+        function()
+          require('dap').step_into()
+        end,
+        desc = 'Step Into',
+      },
+      {
+        '<leader>dj',
+        function()
+          require('dap').down()
+        end,
+        desc = 'Down',
+      },
+      {
+        '<leader>dk',
+        function()
+          require('dap').up()
+        end,
+        desc = 'Up',
+      },
+      {
+        '<leader>dl',
+        function()
+          require('dap').run_last()
+        end,
+        desc = 'Run Last',
+      },
+      {
+        '<leader>do',
+        function()
+          require('dap').step_out()
+        end,
+        desc = 'Step Out',
+      },
+      {
+        '<leader>dO',
+        function()
+          require('dap').step_over()
+        end,
+        desc = 'Step Over',
+      },
+      {
+        '<leader>dp',
+        function()
+          require('dap').pause()
+        end,
+        desc = 'Pause',
+      },
+      {
+        '<leader>ds',
+        function()
+          require('dap').session()
+        end,
+        desc = 'Session',
+      },
+      {
+        '<leader>dt',
+        function()
+          require('dap').terminate()
+        end,
+        desc = 'Terminate',
+      },
+      {
+        '<leader>dw',
+        function()
+          require('dap.ui.widgets').hover()
+        end,
+        desc = 'Widgets',
+      },
+    },
     config = function()
-      -- dap-ui
-      vim.api.nvim_set_hl(0, 'DapStoppedLine', { default = true, link = 'Visual' })
+      local dap = require 'dap'
+      local dap_utils = require 'dap.utils'
+      local dap_vscode_js = require 'dap-vscode-js'
+      dap.set_log_level 'DEBUG'
 
-      require('dap').adapters.node2 = {
-        type = 'executable',
-        command = 'node',
-        args = { '/opt/homebrew/bin/node', '/opt/homebrew/lib/node_modules/vscode-js-debug/out/src/vsDebugServer.js' },
+      -- Configure the adapter
+      -- dap.adapters.node2 = {
+      --   type = 'executable',
+      --  command = 'node', -- Your Node.js executable
+      --  args = { os.getenv 'HOME' .. '/.DAP/vscode-js-debug' },
+      --}
+
+      -- Define configurations
+
+      dap_vscode_js.setup {
+        node_path = 'node',
+        debugger_path = os.getenv 'HOME' .. '/.DAP/vscode-js-debug',
+        adapters = { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' },
       }
 
-      require('dap-vscode-js').setup {
-        node_path = '/opt/homebrew/bin/node',
-        debugger_path = '(runtimedir)/site/pack/packer/opt/vscode-js-debug', -- Path to vscode-js-debug installation.
-        debugger_cmd = { 'js-debug-adapter' }, -- Command to use to launch the debug server. Takes precedence over `node_path` and `debugger_path`.
-        adapters = { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' }, -- which adapters to register in nvim-dap
-        log_file_path = '(stdpath cache)/dap_vscode_js.log', -- Path for file logging
-        log_file_level = false, -- Logging level for output to file. Set to false to disable file logging.
-        log_console_level = vim.log.levels.ERROR, -- Logging level for output to console. Set to false to disable console output.
+      local exts = {
+        'javascript',
+        -- 'typescript',
+        --'javascriptreact',
+        --'typescriptreact',
+        -- using pwa-chrome
+        --'vue',
+        --'svelte',
       }
 
-      for _, language in ipairs { 'typescript', 'javascript' } do
-        require('dap').configurations[language] = {
-
+      for _, ext in ipairs(exts) do
+        dap.configurations[ext] = {
           {
             type = 'pwa-node',
             request = 'launch',
-            name = 'Launch file',
-            program = '${file}',
-            cwd = '${workspaceFolder}',
+            name = 'Launch Current File (pwa-node)',
+            cwd = vim.fn.getcwd(),
+            args = { '${file}' },
+            sourceMaps = true,
+            protocol = 'inspector',
           },
           {
             type = 'pwa-node',
+            request = 'launch',
+            name = 'Launch Current File (pwa-node with ts-node)',
+            cwd = vim.fn.getcwd(),
+            runtimeArgs = { '--loader', 'ts-node/esm' },
+            runtimeExecutable = 'node',
+            args = { '${file}' },
+            sourceMaps = true,
+            protocol = 'inspector',
+            skipFiles = { '<node_internals>/**', 'node_modules/**' },
+            resolveSourceMapLocations = {
+              '${workspaceFolder}/**',
+              '!**/node_modules/**',
+            },
+          },
+          {
+            type = 'pwa-node',
+            request = 'launch',
+            name = 'Launch Test Current File (pwa-node with deno)',
+            cwd = vim.fn.getcwd(),
+            runtimeArgs = { 'test', '--inspect-brk', '--allow-all', '${file}' },
+            runtimeExecutable = 'deno',
+            smartStep = true,
+            console = 'integratedTerminal',
+            attachSimplePort = 9229,
+          },
+          {
+            type = 'pwa-chrome',
             request = 'attach',
-            name = 'Attach',
-            processId = require('dap.utils').pick_process,
-            cwd = '${workspaceFolder}',
+            name = 'Attach Program (pwa-chrome, select port)',
+            program = '${file}',
+            cwd = vim.fn.getcwd(),
+            sourceMaps = true,
+            port = function()
+              return vim.fn.input('Select port: ', 9222)
+            end,
+            webRoot = '${workspaceFolder}',
+          },
+
+          {
+            type = 'pwa-node',
+            request = 'attach',
+            name = 'Attach Program (pwa-node, select pid)',
+            cwd = vim.fn.getcwd(),
+            processId = dap_utils.pick_process,
+            skipFiles = { '<node_internals>/**' },
           },
         }
       end
