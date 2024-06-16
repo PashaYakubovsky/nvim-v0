@@ -661,6 +661,15 @@ require('lazy').setup({
         scss = { { 'prettierd', 'prettier' } },
         json = { { 'prettierd', 'prettier' } },
       },
+      ft_parsers = {
+        lua = 'stylua',
+        -- python = "black",
+        javascript = 'prettierd',
+        html = 'prettierd',
+        css = 'prettierd',
+        scss = 'prettierd',
+        json = 'prettierd',
+      },
     },
   },
 
