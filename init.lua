@@ -159,7 +159,16 @@ require('lazy').setup {
   --
   --  This is equivalent to:
   --    require('Comment').setup({})
-  'mg979/vim-visual-multi',
+  {
+    'mg979/vim-visual-multi',
+    setup = function()
+      vim.g.VM_mouse_mappings = 1
+      vim.g.VM_maps = {}
+      vim.g.VM_maps['Find Under'] = 'C-d'
+      vim.g.VM_maps['Find Subword Under'] = 'C-d'
+    end,
+  },
+
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
   'github/copilot.vim', -- Copilot plugin
   {
@@ -226,11 +235,9 @@ require('lazy').setup {
     'f-person/git-blame.nvim',
     config = function()
       vim.g.gitblame_enabled = 0 -- disable by default
-      vim.cmd "command! GitToggle lua require('git-blame').toggle()" -- Setup a convenient command
     end,
     setup = function()
       require('git-blame').setup()
-
       -- enable git-blame
       vim.g.gitblame_enabled = 1
       vim.g.gitblame_schedule_event = 'CursorHold'
@@ -356,6 +363,7 @@ require('lazy').setup {
         --   },
         -- },
         -- pickers = {}
+        file_ignore_patterns = { 'node_modules' },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -575,7 +583,6 @@ require('lazy').setup {
         tsserver = {},
         cssls = {},
         css_variables = {},
-
         lua_ls = {
           -- cmd = {...},
           -- filetypes = { ...},
@@ -623,7 +630,7 @@ require('lazy').setup {
     end,
   },
 
-  { -- Autoformat
+  { -- Autoformat/
     'stevearc/conform.nvim',
     lazy = false,
     keys = {
@@ -729,7 +736,7 @@ require('lazy').setup {
         -- No, but seriously. Please read `:help ins-completion`, it is really good!
         mapping = cmp.mapping.preset.insert {
           -- Select the [n]ext item
-          ['<C-n>'] = cmp.mapping.select_next_item(),
+          ['<C-d>'] = cmp.mapping.select_next_item(),
           -- Select the [p]revious item
           ['<C-p>'] = cmp.mapping.select_prev_item(),
 
@@ -740,7 +747,7 @@ require('lazy').setup {
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          ['<Tab>'] = cmp.mapping.confirm { select = true },
+          ['<Enter>'] = cmp.mapping.confirm { select = true },
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
@@ -912,20 +919,43 @@ require('lazy').setup {
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
   -- { import = 'custom.plugins' },
   --
-  --- DAP Configuration for javascript and typescript
-  'nvim-neotest/nvim-nio',
+  --- DAP Configuration
+  'mxsdev/nvim-dap-vscode-js',
   'rcarriga/nvim-dap-ui',
+  {
+    'theHamsta/nvim-dap-virtual-text',
+    config = function()
+      require('nvim-dap-virtual-text').setup {
+        clear_on_continue = true,
+        display_callback = function(variable, buf, stackframe, node, options)
+          local max_name_length = 10
+          local max_value_length = 40
+          if #variable.name > max_name_length then
+            variable.name = variable.name:sub(1, max_name_length) .. '...'
+          end
+          if #variable.value > max_value_length then
+            variable.value = variable.value:sub(1, max_value_length) .. '...'
+          end
+
+          if options.virt_text_pos == 'eol' then
+            return variable.name .. ' = ' .. variable.value
+          end
+          return ' = ' .. variable.value
+        end,
+        virt_text_pos = vim.fn.has 'nvim-0.10' == 1 and 'inline' or 'eol',
+      }
+    end,
+  },
+  'nvim-neotest/nvim-nio',
   {
     'mfussenegger/nvim-dap',
     recommended = true,
     desc = 'Debugging support. Requires language specific adapters to be configured. (see lang extras)',
     dependencies = {
-
-      {
-        'theHamsta/nvim-dap-virtual-text',
-        opts = {},
-      },
       'mxsdev/nvim-dap-vscode-js',
+      'rcarriga/nvim-dap-ui',
+      'theHamsta/nvim-dap-virtual-text',
+      'nvim-neotest/nvim-nio',
     },
     ensure_installed = 'all',
     keys = {
@@ -945,95 +975,75 @@ require('lazy').setup {
         desc = 'Continue',
       },
       {
-        '<leader>dr',
-        function()
-          -- open vscode debug console
-          require('dap').repl.open()
-        end,
-      },
-      {
-        '<leader>dC',
+        '<leader>bc',
         function()
           require('dap').run_to_cursor()
         end,
         desc = 'Run to Cursor',
       },
       {
-        '<leader>dg',
-        function()
-          require('dap').goto_()
-        end,
-        desc = 'Go to Line (No Execute)',
-      },
-      {
-        '<leader>di',
+        '<leader>bi',
         function()
           require('dap').step_into()
         end,
         desc = 'Step Into',
       },
       {
-        '<leader>dj',
+        '<leader>bj',
         function()
           require('dap').down()
         end,
         desc = 'Down',
       },
+
       {
-        '<leader>dk',
-        function()
-          require('dap').up()
-        end,
-        desc = 'Up',
-      },
-      {
-        '<leader>dl',
-        function()
-          require('dap').run_last()
-        end,
-        desc = 'Run Last',
-      },
-      {
-        '<leader>do',
+        '<leader>bo',
         function()
           require('dap').step_out()
         end,
         desc = 'Step Out',
       },
       {
-        '<leader>dO',
-        function()
-          require('dap').step_over()
-        end,
-        desc = 'Step Over',
-      },
-      {
-        '<leader>dp',
+        '<leader>bp',
         function()
           require('dap').pause()
         end,
         desc = 'Pause',
       },
       {
-        '<leader>ds',
-        function()
-          require('dap').session()
-        end,
-        desc = 'Session',
-      },
-      {
-        '<leader>dt',
+        '<leader>bt',
         function()
           require('dap').terminate()
         end,
         desc = 'Terminate',
       },
       {
-        '<leader>dw',
+        '<leader>bw',
         function()
           require('dap.ui.widgets').hover()
         end,
         desc = 'Widgets',
+      },
+      {
+        '<F3>',
+        function()
+          require('dap').step_over()
+        end,
+      },
+      {
+        '<leader>br',
+        function()
+          require('dap').repl.open()
+        end,
+        desc = 'Repl',
+      },
+      -- EVAL under the cursor
+      {
+        '<leader>?',
+        function()
+          require('dapui').eval(nil, { enter = true })
+        end,
+        desc = 'Open UI window with content from variable under cursor',
       },
     },
     config = function()
@@ -1042,9 +1052,8 @@ require('lazy').setup {
       local dap_vscode_js = require 'dap-vscode-js'
       local dap_ui = require 'dapui'
 
-      dap_ui.setup()
-
-      dap.set_log_level 'DEBUG'
+      -- Highlight for stopped line
+      vim.api.nvim_set_hl(0, 'DapStoppedLine', { default = true, link = 'Visual' })
 
       -- Define configurations
       dap_vscode_js.setup {
@@ -1056,10 +1065,12 @@ require('lazy').setup {
       local exts = {
         'javascript',
         'typescript',
+        'javascriptreact',
+        'typescriptreact',
+        'svelte',
       }
 
       for _, ext in ipairs(exts) do
-        -- log the configuration
         dap.configurations[ext] = {
           {
             type = 'pwa-node',
@@ -1073,11 +1084,40 @@ require('lazy').setup {
           {
             type = 'pwa-node',
             request = 'launch',
-            name = 'Launch Current File (pwa-node with ts-node)',
+            name = 'Launch Current TS File (pwa-node)',
             cwd = vim.fn.getcwd(),
-            runtimeArgs = { '--loader', 'ts-node/esm' },
-            runtimeExecutable = 'node',
             args = { '${file}' },
+            protocol = 'inspector',
+            runtimeExecutable = 'ts-node',
+            sourceMaps = true,
+            sourceMapPathOverrides = {
+              ['./*'] = '${workspaceFolder}/src/*',
+            },
+          },
+          {
+            -- use nvim-dap-vscode-js's pwa-chrome debug adapter
+            type = 'pwa-chrome',
+            request = 'launch',
+            -- name of the debug action
+            name = 'Launch Chrome to debug client side code',
+
+            -- url of the page to debug
+            url = function()
+              return vim.fn.input('URL: ', 'http://localhost:5173')
+            end,
+            sourceMaps = true,
+            webRoot = '${workspaceFolder}/src',
+            protocol = 'inspector',
+            port = 9222,
+            -- skip files from vite's hmr
+            skipFiles = { '**/node_modules/**/*', '**/@vite/*', '**/src/client/*', '**/src/*' },
+          },
+          {
+            type = 'pwa-node',
+            request = 'attach',
+            name = 'Attach Program (pwa-node)',
+            --cwd = vim.fn.getcwd(),
+            cwd = '${workspaceFolder}',
             sourceMaps = true,
             protocol = 'inspector',
             skipFiles = { '<node_internals>/**', 'node_modules/**' },
@@ -1088,60 +1128,118 @@ require('lazy').setup {
           },
           {
             type = 'pwa-node',
-            request = 'launch',
-            name = 'Launch Test Current File (pwa-node with deno)',
-            cwd = vim.fn.getcwd(),
-            runtimeArgs = { 'test', '--inspect-brk', '--allow-all', '${file}' },
-            runtimeExecutable = 'deno',
-            smartStep = true,
-            console = 'integratedTerminal',
-            attachSimplePort = 9229,
-          },
-          {
-            type = 'pwa-chrome',
-            request = 'attach',
-            name = 'Attach Program (pwa-chrome, select port)',
-            program = '${file}',
-            cwd = vim.fn.getcwd(),
-            sourceMaps = true,
-            port = function()
-              return vim.fn.input('Select port: ', 9222)
-            end,
-            webRoot = '${workspaceFolder}',
-          },
-
-          {
-            type = 'pwa-node',
             request = 'attach',
             name = 'Attach Program (pwa-node, select pid)',
             cwd = vim.fn.getcwd(),
             processId = dap_utils.pick_process,
-            skipFiles = { '<node_internals>/**' },
+            sourceMaps = true,
+            protocol = 'inspector',
+            port = 9230,
+            resolveSourceMapLocations = {
+              '${workspaceFolder}/**',
+              '!**/node_modules/**',
+            },
+            skipFiles = { '${workspaceFolder}/node_modules/**/*.js' },
           },
         }
       end
 
       -- DAP UI
+      dap_ui.setup {
+        icons = { expanded = '▾', collapsed = '▸', current_frame = '»' },
+        mappings = {
+          -- Use a table to apply multiple mappings
+          expand = { '<CR>', '<2-LeftMouse>' },
+          open = 'o',
+          remove = 'd',
+          edit = 'e',
+          repl = 'r',
+          toggle = 't',
+        },
+        layouts = {
+          {
+            elements = {
+              'scopes',
+              -- 'breakpoints',
+              'stacks',
+              -- 'watches',
+            },
+            size = 40,
+            position = 'left',
+          },
+          {
+            elements = {
+              'repl',
+              --    'console',
+            },
+            size = 10,
+            position = 'bottom',
+          },
+        },
+        floating = {
+          max_height = nil, -- These can be integers or a float between 0 and 1.
+          max_width = nil, -- Floats will be treated as percentage of your screen.
+          border = 'rounded', -- Border style. Can be "single", "double" or "rounded"
+          mappings = {
+            close = { 'q', '<Esc>' },
+          },
+        },
+        controls = {
+          -- Requires Neovim nightly (or 0.8 when released)
+          enabled = true,
+          -- Display controls in this element
+          element = 'repl',
+          icons = {
+            pause = '',
+            play = '',
+            step_into = '',
+            step_over = '',
+            step_out = '',
+            step_back = '',
+            run_last = '',
+            terminate = '',
+          },
+        },
+        windows = { indent = 1 },
+      }
+
+      -- DAP events
       dap.listeners.before.attach.dapui_config = function()
         print 'before attach dapui'
+        -- open dapui when attaching
         dap_ui.open()
+        -- close nvimtree when attaching
+        vim.cmd 'NvimTreeClose'
+        -- hide virtual text from git blame
+        vim.cmd 'GitBlameDisable'
       end
       dap.listeners.before.launch.dapui_config = function()
         print 'before launch dapui'
+        -- open dapui when launching
         dap_ui.open()
+        -- close nvimtree when launching
+        vim.cmd 'NvimTreeClose'
+        -- hide virtual text from git blame
+        vim.cmd 'GitBlameDisable'
       end
       dap.listeners.before.event_terminated.dapui_config = function()
         print 'before event_terminated dapui'
+        -- close dapui when terminating
         dap_ui.close()
+        -- show virtual text from git blame
+        vim.cmd 'GitBlameEnable'
       end
       dap.listeners.before.event_exited.dapui_config = function()
         print 'before event_exited dapui'
+        -- close dapui when exiting
         dap_ui.close()
+        -- show virtual text from git blame
+        vim.cmd 'GitBlameEnable'
       end
     end,
   },
   ui = {
-    -- If you are using a Nerd Font: set icons to an empty table which will use the
+    --If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
     icons = vim.g.have_nerd_font and {} or {
       cmd = '⌘',
