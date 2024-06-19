@@ -1,3 +1,5 @@
+vim.opt.timeoutlen = 1000
+vim.opt.ttimeoutlen = 0
 --disable netrw at the very start of your init.lua
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
@@ -17,6 +19,15 @@ vim.opt.spelllang = 'en_us'
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
+
+function save()
+  vim.cmd('silent! wa')
+  vim.cmd.lua('vim.lsp.buf.format()')
+  print('Saved!')
+end
+
+-- Set key for save
+vim.api.nvim_set_keymap('n', '<leader>w', '<cmd>lua save()<CR>', { noremap = true, silent = true })
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -86,6 +97,10 @@ vim.opt.scrolloff = 10
 vim.opt.hlsearch = true
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+-- Switch to next buffer 
+--  See `:help :bnext` 
+vim.keymap.set('n', '<leader>l', '<cmd>bn<CR>', { desc = 'Switch to [N]ext buffer' })
+vim.keymap.set('n', '<leader>h', '<cmd>bp<CR>', { desc = 'Switch to [P]revious buffer' })
 -- Diagnostic keymaps
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous [D]iagnostic message' })
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next [D]iagnostic message' })
@@ -115,6 +130,17 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+-- Normal mode undo and redo
+vim.api.nvim_set_keymap('n', '<C-z>', 'u', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<C-y>', '<C-r>', { noremap = true, silent = true })
+
+-- Insert mode undo and redo
+vim.api.nvim_set_keymap('i', '<C-z>', '<C-o>u', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('i', '<C-y>', '<C-o><C-r>', { noremap = true, silent = true })
+
+-- Visual mode undo and redo
+vim.api.nvim_set_keymap('v', '<C-z>', '<Esc>u', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('v', '<C-y>', '<Esc><C-r>', { noremap = true, silent = true })
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -169,7 +195,7 @@ require('lazy').setup {
     end,
   },
 
-  'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  'tpope/vim-sleuth',   -- Detect tabstop and shiftwidth automatically
   'github/copilot.vim', -- Copilot plugin
   {
     'voldikss/vim-floaterm',
@@ -211,7 +237,16 @@ require('lazy').setup {
     end,
   },
   -- "gc" to comment visual regions/lines
-  { 'numToStr/Comment.nvim', opts = {} },
+  {
+    'numToStr/Comment.nvim',
+    opts = {},
+    priority = 1000,
+    config = function()
+      vim.keymap.set('n', '<leader>c', '<cmd>normal gcc<CR>')
+      vim.keymap.set('v', '<leader>c', '<cmd>normal gcc<CR>')
+    end,
+  },
+
   {
     'nvim-tree/nvim-tree.lua',
     version = '*',
@@ -277,7 +312,7 @@ require('lazy').setup {
   -- after the plugin has been loaded:
   --  config = function() ... end
 
-  { -- Useful plugin to show you pending keybinds.
+  {                     -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     config = function() -- This is the function that runs, AFTER loading
@@ -285,11 +320,9 @@ require('lazy').setup {
 
       -- Document existing key chains
       require('which-key').register {
-        ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
         ['<leader>d'] = { name = '[D]ocument', _ = 'which_key_ignore' },
         ['<leader>r'] = { name = '[R]ename', _ = 'which_key_ignore' },
         ['<leader>s'] = { name = '[S]earch', _ = 'which_key_ignore' },
-        ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
         ['<leader>t'] = { name = '[T]oggle', _ = 'which_key_ignore' },
         ['<leader>h'] = { name = 'Git [H]unk', _ = 'which_key_ignore' },
       }
@@ -389,7 +422,7 @@ require('lazy').setup {
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
       -- Slightly advanced example of overriding default behavior and theme
-      vim.keymap.set('n', '<leader>/', function()
+      vim.keymap.set('n', '<leader>;', function()
         -- You can pass additional configuration to Telescope to change the theme, layout, etc.
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
           winblend = 10,
@@ -423,11 +456,11 @@ require('lazy').setup {
 
       -- Useful status updates for LSP.
       -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-      { 'j-hui/fidget.nvim', opts = {} },
+      { 'j-hui/fidget.nvim',       opts = {} },
 
       -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
       -- used for completion, annotations and signatures of Neovim apis
-      { 'folke/neodev.nvim', opts = {} },
+      { 'folke/neodev.nvim',       opts = {} },
     },
     config = function()
       -- Brief aside: **What is LSP?**
@@ -502,7 +535,7 @@ require('lazy').setup {
 
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
-          map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+          --map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
 
           -- Opens a popup that displays documentation about the word under your cursor
           --  See `:help K` for why this keymap.
@@ -630,54 +663,99 @@ require('lazy').setup {
     end,
   },
 
-  { -- Autoformat/
-    'stevearc/conform.nvim',
-    lazy = false,
-    keys = {
-      {
-        '<leader>f',
-        function()
-          require('conform').format { async = true, lsp_fallback = true }
+  { 'jose-elias-alvarez/null-ls.nvim',
+    config = function()
+      local null_ls = require("null-ls")
+      local group = vim.api.nvim_create_augroup("lsp_format_on_save", { clear = false })
+      local event = "BufWritePre"
+      local async = event == "BufWritePost"
+
+      null_ls.setup({
+        sources = {
+          null_ls.builtins.formatting.prettier
+        },
+        on_attach = function(client, bufnr)
+          if client.supports_method("textDocument/formatting") then
+            vim.keymap.set("n", "<Leader>f", function()
+              vim.lsp.buf.format({ bufnr = vim.api.nvim_get_current_buf() })
+            end, { buffer = bufnr, desc = "[lsp] format" })
+
+            vim.api.nvim_clear_autocmds({ buffer = bufnr, group = group })
+            vim.api.nvim_create_autocmd(event, {
+              buffer = bufnr,
+              group = group,
+              callback = function()
+                vim.lsp.buf.format({ bufnr = bufnr, async = async })
+              end,
+              desc = "[lsp] format on save",
+            })
+          end
+
+          if client.supports_method("textDocument/rangeFormatting") then
+            vim.keymap.set("x", "<Leader>f", function()
+              vim.lsp.buf.format({ bufnr = vim.api.nvim_get_current_buf() })
+            end, { buffer = bufnr, desc = "[lsp] format" })
+          end
         end,
-        mode = '',
-        desc = '[F]ormat buffer',
-      },
+      })
+    end,
+  },
+  { 'MunifTanjim/prettier.nvim',
+    dependencies = {
+      'neovim/nvim-lspconfig',
+      'jose-elias-alvarez/null-ls.nvim',
     },
-    opts = {
-      notify_on_error = false,
-      format_on_save = function(bufnr)
-        -- Disable "format_on_save lsp_fallback" for languages that don't
-        -- have a well standardized coding style. You can add additional
-        -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
-        return {
-          timeout_ms = 500,
-          lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
-        }
-      end,
-      formatters_by_ft = {
-        lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use a sub-list to tell conform to run *until* a formatter
-        -- is found.
-        javascript = { { 'prettierd', 'prettier' } },
-        html = { { 'prettierd', 'prettier' } },
-        css = { { 'prettierd', 'prettier' } },
-        scss = { { 'prettierd', 'prettier' } },
-        json = { { 'prettierd', 'prettier' } },
-      },
-      ft_parsers = {
-        lua = 'stylua',
-        -- python = "black",
-        javascript = 'prettierd',
-        html = 'prettierd',
-        css = 'prettierd',
-        scss = 'prettierd',
-        json = 'prettierd',
-      },
-    },
+    ensure_installed = 'all',
+    config = function()
+      local prettier = require 'prettier'
+      prettier.setup {
+        bin = 'prettier',
+        filetypes = {
+          'css',
+          'graphql',
+          'html',
+          'javascript',
+          'javascriptreact',
+          'json',
+          'less',
+          'markdown',
+          'scss',
+          'typescript',
+          'typescriptreact',
+          'yaml',
+          lua = { 'stylua' },
+        },
+        ['null-ls'] = {
+          condition = function()
+            return prettier.config_exists {
+              check_package_json = true,
+            }
+          end,
+          runtime_condition = function(params)
+            return true
+          end,
+          timeout = 5000,
+        },
+        cli_options = {
+          arrow_parens = 'always',
+          bracket_spacing = true,
+          bracket_same_line = false,
+          embedded_language_formatting = 'auto',
+          end_of_line = 'lf',
+          html_whitespace_sensitivity = 'css',
+          print_width = 80,
+          prose_wrap = 'preserve',
+          quote_props = 'as-needed',
+          semi = true,
+          single_attribute_per_line = false,
+          single_quote = false,
+          tab_width = 2,
+          trailing_comma = 'es5',
+          use_tabs = false,
+          vue_indent_script_and_style = false,
+        },
+      }
+    end,
   },
 
   { -- Autocompletion
@@ -790,39 +868,14 @@ require('lazy').setup {
       }
     end,
   },
-
-  { -- You can easily change to a different colorscheme.
-    -- Change the name of the colorscheme plugin below, and then
-    -- change the command in the config to whatever the name of that colorscheme is.
-    --
-    -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
-    init = function()
-      -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
-
-      -- You can configure highlights by doing something like:
-      vim.cmd.hi 'Comment gui=none'
+  {
+    'ellisonleao/gruvbox.nvim',
+    priority = 1000,
+    config = function()
+      vim.o.background = 'dark' -- or "light" for light mode
+      vim.cmd [[colorscheme gruvbox]]
     end,
   },
-
-  -- {
-  --  'gmr458/vscode_modern_theme.nvim',
-  -- lazy = false,
-  -- priority = 1000,
-  -- config = function()
-  --   require('vscode_modern').setup {
-  --    cursorline = true,
-  --   transparent_background = false,
-  --  nvim_tree_darker = true,
-  -- }
-  -- vim.cmd.colorscheme 'vscode_modern'
-  -- end,
-  -- },
-
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
@@ -1134,7 +1187,9 @@ require('lazy').setup {
             processId = dap_utils.pick_process,
             sourceMaps = true,
             protocol = 'inspector',
-            port = 9230,
+            port = function()
+              return tonumber(vim.fn.input('Port: ', '9229'))
+            end,
             resolveSourceMapLocations = {
               '${workspaceFolder}/**',
               '!**/node_modules/**',
@@ -1177,8 +1232,8 @@ require('lazy').setup {
           },
         },
         floating = {
-          max_height = nil, -- These can be integers or a float between 0 and 1.
-          max_width = nil, -- Floats will be treated as percentage of your screen.
+          max_height = nil,   -- These can be integers or a float between 0 and 1.
+          max_width = nil,    -- Floats will be treated as percentage of your screen.
           border = 'rounded', -- Border style. Can be "single", "double" or "rounded"
           mappings = {
             close = { 'q', '<Esc>' },
